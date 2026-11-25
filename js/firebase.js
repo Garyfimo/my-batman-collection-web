@@ -14,4 +14,6 @@ const firebaseConfig = {
 };
 
 export const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+// This project has two Firestore databases: (default) and the named one below.
+// The Android app writes to the named database; the web client must read it too.
+export const db = getFirestore(app, "my-batman-collection");
