@@ -18,16 +18,18 @@
 
   <main>
     <ul class="wish-list" id="wish-list"></ul>
+    <p class="loading" id="wish-loading">Loading…</p>
     <p class="empty" id="wish-empty" hidden>Wishlist is empty.</p>
-    <p class="error" id="wish-error" hidden>Couldn't load the wishlist. Try refreshing.</p>
+    <p class="error" id="wish-error" role="alert" hidden>Couldn't load the wishlist. Try refreshing.</p>
   </main>
 
-  <dialog id="claim-modal" class="modal">
+  <dialog id="claim-modal" class="modal" aria-labelledby="claim-title">
+    <h2 id="claim-title">Claim this item</h2>
     <div class="modal-field">
       <label for="claim-name-input">Your name</label>
       <input type="text" id="claim-name-input" maxlength="60" autocomplete="name">
     </div>
-    <p class="error modal-error" id="claim-error" hidden></p>
+    <p class="error modal-error" id="claim-error" role="alert" hidden></p>
     <div class="modal-actions">
       <button type="button" id="claim-cancel">Cancel</button>
       <button type="button" id="claim-confirm">Confirm claim</button>

@@ -20,9 +20,10 @@ service cloud.firestore {
         // Owner: unrestricted update.
         (request.auth != null && request.auth.uid == "<OWNER_UID>") // REPLACE_OWNER_UID_BEFORE_DEPLOY
         ||
-        // Anyone else: must change ONLY claimedBy and claimedAt, and claimedBy
-        // must be a non-empty string under a length cap.
-        (request.resource.data.diff(resource.data).affectedKeys()
+        // Anyone else: may ONLY claim an UNCLAIMED item.
+        // A claim, once set, is final; only the owner can revise.
+        (resource.data.get("claimedBy", null) == null
+          && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(["claimedBy", "claimedAt"])
           && request.resource.data.claimedBy is string
           && request.resource.data.claimedBy.size() > 0

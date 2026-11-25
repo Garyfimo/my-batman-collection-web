@@ -11,6 +11,8 @@ let activeWishId = null;
 const listEl = document.getElementById("wish-list");
 const emptyEl = document.getElementById("wish-empty");
 const errorEl = document.getElementById("wish-error");
+const loadingEl = document.getElementById("wish-loading");
+const claimTitleEl = document.getElementById("claim-title");
 const headerEl = document.getElementById("claimer-header");
 const modal = document.getElementById("claim-modal");
 const input = document.getElementById("claim-name-input");
@@ -46,6 +48,15 @@ function renderClaimerHeader() {
   headerEl.append(label, change);
 }
 
+function safeHttpUrl(s) {
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" || u.protocol === "http:" ? s : null;
+  } catch {
+    return null;
+  }
+}
+
 function textEl(tag, className, text) {
   const el = document.createElement(tag);
   el.className = className;
@@ -65,9 +76,10 @@ function renderList() {
 
     const actions = document.createElement("div");
     actions.className = "wish-actions";
-    if (w.url) {
+    const href = w.url ? safeHttpUrl(w.url) : null;
+    if (href) {
       const a = document.createElement("a");
-      a.href = w.url;
+      a.href = href;
       a.target = "_blank";
       a.rel = "noopener";
       a.textContent = "View on store →";
@@ -92,6 +104,8 @@ listEl.addEventListener("click", (event) => {
   const btn = event.target.closest(".claim-button");
   if (!btn) return;
   activeWishId = btn.dataset.wishId;
+  const target = wishes.find((x) => x.id === activeWishId);
+  claimTitleEl.textContent = `Claim "${target?.nombre ?? "this item"}"`;
   input.value = getClaimer() ?? "";
   claimError.hidden = true;
   claimError.textContent = "";
@@ -133,6 +147,7 @@ confirmBtn.addEventListener("click", async () => {
 async function load() {
   try {
     const snap = await getDocs(query(collection(db, "wishlist"), orderBy("createdAt", "desc")));
+    loadingEl.hidden = true;
     wishes = snap.docs.map((d) => {
       const x = d.data();
       return { id: d.id, tipo: x.tipo, nombre: x.nombre, serie: x.serie, url: x.url, claimedBy: x.claimedBy, claimedAt: x.claimedAt };
@@ -140,6 +155,7 @@ async function load() {
     renderList();
   } catch (e) {
     console.error(e);
+    loadingEl.hidden = true;
     errorEl.hidden = false;
   }
 }

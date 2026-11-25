@@ -4,7 +4,7 @@ Public-facing web view of the Batman figure collection and wishlist stored by th
 
 Reads the same Firestore backend; the Android app is the source of truth, this site is the read-only window for friends to browse.
 
-Stack, deployment, and scope are being brainstormed in `docs/superpowers/specs/` — see the first design doc for details.
+Design docs live in `docs/superpowers/specs/`.
 
 ## Firebase setup (one-time)
 
@@ -28,6 +28,24 @@ Required once (and whenever `firestore.rules` changes).
 6. Discard local changes: `git checkout firestore.rules`.
 
 Or (quicker, less repeatable): paste the (UID-substituted) rules into Firebase Console → Firestore Database → Rules tab → Publish.
+
+### Regression test
+
+Verify the claim rule before every deploy. After deploying, open the site in a private window. In another tab, open DevTools and attempt:
+
+```js
+const { collection, doc, getDocs, limit, query, updateDoc, serverTimestamp } =
+  await import("https://www.gstatic.com/firebasejs/10.14.0/firebase-firestore.js");
+const { db } = await import("./js/firebase.js");
+const claimed = (await getDocs(query(collection(db, "wishlist"), limit(10))))
+  .docs.find(d => d.data().claimedBy);
+if (claimed) {
+  await updateDoc(doc(db, "wishlist", claimed.id), { claimedBy: "hacked", claimedAt: serverTimestamp() });
+  // Expected: FirebaseError: Missing or insufficient permissions.
+}
+```
+
+If no permission error fires, the rules are regressed — fix before relying on the site.
 
 ## Deploy to GitHub Pages
 

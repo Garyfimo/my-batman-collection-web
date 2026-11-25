@@ -8,6 +8,16 @@ const filterRow = document.getElementById("filter-row");
 const grid = document.getElementById("figures-grid");
 const emptyEl = document.getElementById("figures-empty");
 const errorEl = document.getElementById("figures-error");
+const loadingEl = document.getElementById("figures-loading");
+
+function safeHttpUrl(s) {
+  try {
+    const u = new URL(s);
+    return u.protocol === "https:" || u.protocol === "http:" ? s : null;
+  } catch {
+    return null;
+  }
+}
 
 function textEl(tag, className, text) {
   const el = document.createElement(tag);
@@ -25,10 +35,14 @@ function renderFilterChips() {
     chip.className = "chip";
     chip.textContent = label ?? "All";
     chip.dataset.filter = label ?? "";
+    chip.setAttribute("aria-pressed", label === currentFilter ? "true" : "false");
     if (label === currentFilter) chip.classList.add("selected");
     chip.addEventListener("click", () => {
       currentFilter = label;
-      for (const c of filterRow.children) c.classList.toggle("selected", c === chip);
+      for (const c of filterRow.children) {
+        c.classList.toggle("selected", c === chip);
+        c.setAttribute("aria-pressed", c === chip ? "true" : "false");
+      }
       renderGrid();
     });
     filterRow.append(chip);
@@ -46,7 +60,8 @@ function renderGrid() {
     img.className = "card-image";
     img.loading = "lazy";
     img.alt = f.nombre ?? "";
-    if (f.imageUrl) img.src = f.imageUrl;
+    const src = f.imageUrl ? safeHttpUrl(f.imageUrl) : null;
+    if (src) img.src = src;
 
     const body = document.createElement("div");
     body.className = "card-body";
@@ -62,6 +77,7 @@ function renderGrid() {
 async function load() {
   try {
     const snap = await getDocs(query(collection(db, "figures"), orderBy("createdAt", "desc")));
+    loadingEl.hidden = true;
     for (const d of snap.docs) {
       const { tipo, nombre, serie, imageUrl } = d.data();
       figures.push({ id: d.id, tipo, nombre, serie, imageUrl });
@@ -70,6 +86,7 @@ async function load() {
     renderGrid();
   } catch (e) {
     console.error(e);
+    loadingEl.hidden = true;
     errorEl.textContent = "Couldn't load the collection. Try refreshing.";
     errorEl.hidden = false;
   }
