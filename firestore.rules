@@ -1,0 +1,32 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Figures: public read, owner-only write.
+    match /figures/{id} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null
+        && request.auth.uid == "<OWNER_UID>"; // REPLACE_OWNER_UID_BEFORE_DEPLOY
+    }
+
+    // Wishlist: public read; owner can do anything; anyone can SET exactly
+    // claimedBy + claimedAt and nothing else.
+    match /wishlist/{id} {
+      allow read: if true;
+
+      allow create, delete: if request.auth != null
+        && request.auth.uid == "<OWNER_UID>"; // REPLACE_OWNER_UID_BEFORE_DEPLOY
+
+      allow update: if
+        // Owner: unrestricted update.
+        (request.auth != null && request.auth.uid == "<OWNER_UID>") // REPLACE_OWNER_UID_BEFORE_DEPLOY
+        ||
+        // Anyone else: must change ONLY claimedBy and claimedAt, and claimedBy
+        // must be a non-empty string under a length cap.
+        (request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["claimedBy", "claimedAt"])
+          && request.resource.data.claimedBy is string
+          && request.resource.data.claimedBy.size() > 0
+          && request.resource.data.claimedBy.size() <= 60);
+    }
+  }
+}
