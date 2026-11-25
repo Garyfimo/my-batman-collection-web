@@ -21,7 +21,7 @@ If you fork or rotate the API key, replace the values in `js/firebase.js` with t
 Required once (and whenever `firestore.rules` changes).
 
 1. Find your Firebase UID: Firebase Console → Authentication → Users → your email → UID column.
-2. In a local working copy, open `firestore.rules` and replace BOTH `<OWNER_UID>` placeholders with that UID. **Do not commit the replaced file.**
+2. In a local working copy, open `firestore.rules` and replace every `<OWNER_UID>` placeholder with that UID. There are three; `grep -n REPLACE_OWNER_UID_BEFORE_DEPLOY firestore.rules` lists them. **Do not commit the replaced file.**
 3. Install the Firebase CLI if you haven't: `npm install -g firebase-tools`.
 4. Login once: `firebase login`.
 5. Deploy: `firebase deploy --only firestore:rules --project my-batman-collection`.
