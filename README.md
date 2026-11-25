@@ -28,3 +28,12 @@ Required once (and whenever `firestore.rules` changes).
 6. Discard local changes: `git checkout firestore.rules`.
 
 Or (quicker, less repeatable): paste the (UID-substituted) rules into Firebase Console → Firestore Database → Rules tab → Publish.
+
+## Deploy to GitHub Pages
+
+One-time:
+
+1. Settings → Pages → Source: "Deploy from a branch" → Branch `main`, Folder `/ (root)` → Save.
+2. Wait ~30 seconds. The site is live at https://garyfimo.github.io/my-batman-collection-web/.
+
+Every push to `main` thereafter republishes automatically.
