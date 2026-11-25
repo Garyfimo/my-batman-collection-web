@@ -71,7 +71,12 @@ function renderGrid() {
     card.append(img, body);
     grid.append(card);
   }
-  emptyEl.hidden = figures.length > 0;
+  if (figures.length === 0) {
+    emptyEl.textContent = "No figures yet.";
+  } else if (visible.length === 0) {
+    emptyEl.textContent = "No figures match this filter.";
+  }
+  emptyEl.hidden = visible.length > 0;
 }
 
 async function load() {

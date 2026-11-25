@@ -39,13 +39,19 @@ const { collection, doc, getDocs, limit, query, updateDoc, serverTimestamp } =
 const { db } = await import("./js/firebase.js");
 const claimed = (await getDocs(query(collection(db, "wishlist"), limit(10))))
   .docs.find(d => d.data().claimedBy);
-if (claimed) {
+if (!claimed) {
+  throw new Error("Regression test needs a claimed wishlist doc to run against. Claim one from the deployed site, then re-run.");
+}
+try {
   await updateDoc(doc(db, "wishlist", claimed.id), { claimedBy: "hacked", claimedAt: serverTimestamp() });
-  // Expected: FirebaseError: Missing or insufficient permissions.
+  throw new Error("REGRESSION: overwrite of existing claim was permitted. Fix firestore.rules before trusting this site.");
+} catch (err) {
+  if (err?.code !== "permission-denied") throw err;
+  console.log("OK: claim rule rejected overwrite as expected.");
 }
 ```
 
-If no permission error fires, the rules are regressed — fix before relying on the site.
+If the snippet throws (including the REGRESSION error), the rules are regressed or the test could not run — fix before relying on the site.
 
 ## Deploy to GitHub Pages
 

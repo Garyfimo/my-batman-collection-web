@@ -2,7 +2,7 @@ import { collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } 
 import { db } from "./firebase.js";
 
 const CLAIMER_KEY = "claimerName";
-// Must match the 60-char cap in the Firestore rules.
+// Must match the 60-char cap in the Firestore rules (counted in code points).
 const NAME_MAX = 60;
 
 let wishes = [];
@@ -18,6 +18,7 @@ const modal = document.getElementById("claim-modal");
 const input = document.getElementById("claim-name-input");
 const claimError = document.getElementById("claim-error");
 const confirmBtn = document.getElementById("claim-confirm");
+const cancelBtn = document.getElementById("claim-cancel");
 
 function getClaimer() {
   try { return localStorage.getItem(CLAIMER_KEY); } catch { return null; }
@@ -43,7 +44,6 @@ function renderClaimerHeader() {
     event.preventDefault();
     clearClaimer();
     renderClaimerHeader();
-    renderList();
   });
   headerEl.append(label, change);
 }
@@ -112,34 +112,63 @@ listEl.addEventListener("click", (event) => {
   modal.showModal();
 });
 
-document.getElementById("claim-cancel").addEventListener("click", () => modal.close());
+modal.addEventListener("close", () => {
+  confirmBtn.disabled = false;
+  cancelBtn.disabled = false;
+  claimError.hidden = true;
+  claimError.textContent = "";
+});
+
+cancelBtn.addEventListener("click", () => modal.close());
+// Ignore Esc while a write is in flight.
+modal.addEventListener("cancel", (event) => {
+  if (confirmBtn.disabled) event.preventDefault();
+});
 
 confirmBtn.addEventListener("click", async () => {
   const trimmed = input.value.trim();
-  if (trimmed.length === 0 || trimmed.length > NAME_MAX) {
+  if (trimmed.length === 0 || [...trimmed].length > NAME_MAX) {
     claimError.textContent = "Name required (max 60 chars).";
     claimError.hidden = false;
     return;
   }
   claimError.hidden = true;
   confirmBtn.disabled = true;
+  cancelBtn.disabled = true;
+  const wishId = activeWishId;
+  let keepLocked = false;
   try {
-    await updateDoc(doc(db, "wishlist", activeWishId), {
+    await updateDoc(doc(db, "wishlist", wishId), {
       claimedBy: trimmed,
       claimedAt: serverTimestamp(),
     });
   } catch (e) {
     console.error(e);
-    claimError.textContent = "Couldn't save your claim. Try again.";
-    claimError.hidden = false;
-    confirmBtn.disabled = false;
+    if (e?.code === "permission-denied") {
+      claimError.textContent = "Already claimed — refreshing list.";
+      claimError.hidden = false;
+      keepLocked = true;
+      activeWishId = null;
+      setTimeout(() => modal.close(), 1500);
+      await load();
+    } else {
+      claimError.textContent = "Couldn't save your claim. Try again.";
+      claimError.hidden = false;
+    }
     return;
+  } finally {
+    // On permission-denied the buttons stay locked until the modal closes.
+    if (!keepLocked) {
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+    }
   }
-  confirmBtn.disabled = false;
+  if (activeWishId !== wishId) return;
   setClaimer(trimmed);
-  const w = wishes.find((x) => x.id === activeWishId);
+  const w = wishes.find((x) => x.id === wishId);
   if (w) { w.claimedBy = trimmed; w.claimedAt = new Date(); }
   modal.close();
+  activeWishId = null;
   renderList();
   renderClaimerHeader();
 });

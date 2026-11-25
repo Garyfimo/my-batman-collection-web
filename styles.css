@@ -67,11 +67,6 @@ h1 { margin: 0 0 12px; font-size: 1.5rem; }
 .empty, .loading, .error { text-align: center; padding: 32px 0; }
 .error { color: var(--color-primary); font-weight: 600; }
 
-.modal-backdrop {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.55);
-  display: flex; align-items: center; justify-content: center; padding: 16px;
-}
-.modal-backdrop[hidden] { display: none; }
 .modal { background: var(--color-surface); border-radius: 16px; padding: 24px; width: 100%; max-width: 420px; }
 .modal-field { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 .modal-field input, .modal-field select {

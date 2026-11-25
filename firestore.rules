@@ -25,9 +25,12 @@ service cloud.firestore {
         (resource.data.get("claimedBy", null) == null
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(["claimedBy", "claimedAt"])
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasAll(["claimedBy", "claimedAt"])
           && request.resource.data.claimedBy is string
           && request.resource.data.claimedBy.size() > 0
-          && request.resource.data.claimedBy.size() <= 60);
+          && request.resource.data.claimedBy.size() <= 60
+          && request.resource.data.claimedAt == request.time);
     }
   }
 }
